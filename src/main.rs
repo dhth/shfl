@@ -2,12 +2,9 @@ use anyhow::Context;
 use clap::Parser;
 use ratatui::{
     crossterm::event::{self, Event, KeyCode},
-    style::{
-        palette::tailwind::{GREEN, RED, SLATE},
-        Color, Style, Stylize,
-    },
+    style::{Color, Style, Stylize},
     text::Line,
-    widgets::{Block, List, ListDirection, ListItem, ListState},
+    widgets::{Block, List, ListDirection, ListItem, ListState, Padding},
     Frame,
 };
 use std::fs::File;
@@ -16,16 +13,35 @@ use std::io::BufReader;
 use std::io::Write;
 use std::time::Duration;
 
-const TEXT_FG_COLOR: Color = GREEN.c200;
-const SELECTED_ITEM_TEXT_FG_COLOR: Color = RED.c200;
-const TITLE: &str = "  shfl";
+const TITLE_FG_COLOR: Color = Color::from_u32(0x282828);
+const TITLE_BG_COLOR: Color = Color::from_u32(0xd3869b);
+const SELECTED_ITEM_TEXT_FG_COLOR: Color = Color::from_u32(0xfb4934);
+const TITLE: &str = " shfl ";
 
 #[derive(Parser, Debug)]
 #[command(about, long_about=None)]
 struct Args {
     /// File path
-    #[arg(short = 'p', long = "path", value_name = "STRING")]
+    #[arg(value_name = "STRING")]
     path: String,
+    /// Save on exit
+    #[arg(short = 's', long = "save-on-exit", value_name = "STRING")]
+    save_on_exit: bool,
+}
+
+#[derive(Debug)]
+enum UserMessage {
+    Success(String),
+    Error(String),
+}
+
+impl UserMessage {
+    fn value(&self) -> String {
+        match self {
+            UserMessage::Success(v) => v.clone(),
+            UserMessage::Error(v) => v.clone(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -33,7 +49,8 @@ struct Model {
     running_state: RunningState,
     file_path: String,
     todo_list: Items,
-    message: Option<String>,
+    message: Option<UserMessage>,
+    save_on_exit: bool,
 }
 
 #[derive(Debug)]
@@ -79,7 +96,7 @@ struct Item {
 impl From<&Item> for ListItem<'_> {
     fn from(value: &Item) -> Self {
         let line = match value.status {
-            Selected::No => Line::styled(value.line.clone(), TEXT_FG_COLOR),
+            Selected::No => Line::from(value.line.clone()),
             Selected::Yes => Line::styled(value.line.clone(), SELECTED_ITEM_TEXT_FG_COLOR),
         };
         ListItem::new(line)
@@ -177,12 +194,20 @@ impl Model {
 
         let write_result = write_to_file(items, self.file_path.as_str());
         match write_result {
-            Ok(_) => self.message = Some("written to file".to_string()),
-            Err(e) => self.message = Some(format!("couldn't write to file; error: {}", e)),
+            Ok(_) => self.message = Some(UserMessage::Success("written to file".to_string())),
+            Err(e) => {
+                self.message = Some(UserMessage::Error(format!(
+                    "couldn't write to file; error: {}",
+                    e
+                )))
+            }
         }
     }
 
     fn go_back_or_quit(&mut self) {
+        if self.save_on_exit {
+            self.save_selection();
+        }
         self.running_state = RunningState::Done;
     }
 }
@@ -210,26 +235,32 @@ fn view(model: &mut Model, frame: &mut Frame) {
     let title = model
         .message
         .as_ref()
-        .map(|m| format!("{} ({})", TITLE, m))
+        .map(|m| format!(" {}", m.value()))
         .unwrap_or(TITLE.to_string());
 
+    let base_title_style = Style::new().bold();
+    let title_style = match model.message {
+        Some(_) => base_title_style,
+        None => base_title_style.bg(TITLE_BG_COLOR).fg(TITLE_FG_COLOR),
+    };
     let list = List::new(items)
         .block(
             Block::default()
-                .title(title)
-                .title_style(Style::new().fg(SLATE.c200).bold()),
+                .title_bottom(title)
+                .padding(Padding::bottom(1))
+                .title_style(title_style),
         )
         .style(Style::new().white())
         .repeat_highlight_symbol(true)
-        .highlight_symbol("> ")
-        .highlight_style(Style::new().bold().fg(RED.c200))
+        .highlight_symbol(">> ")
+        .highlight_style(Style::new().fg(SELECTED_ITEM_TEXT_FG_COLOR))
         .direction(ListDirection::TopToBottom);
 
     frame.render_stateful_widget(list, frame.area(), &mut model.todo_list.state)
 }
 
 fn handle_event(_: &Model) -> anyhow::Result<Option<Message>> {
-    if event::poll(Duration::from_millis(250))? {
+    if event::poll(Duration::from_millis(16))? {
         if let Event::Key(key) = event::read()? {
             if key.kind == event::KeyEventKind::Press {
                 return Ok(handle_key(key));
@@ -249,7 +280,7 @@ fn handle_key(key: event::KeyEvent) -> Option<Message> {
         KeyCode::Char('K') => Some(Message::SwitchWithPrevious),
         KeyCode::Enter => Some(Message::SwitchWithFirst),
         KeyCode::Char('s') | KeyCode::Char(' ') => Some(Message::ToggleSelection),
-        KeyCode::Char('q') => Some(Message::Quit),
+        KeyCode::Esc | KeyCode::Char('q') => Some(Message::Quit),
         KeyCode::Char('w') => Some(Message::SaveSelection),
         _ => None,
     }
@@ -292,6 +323,7 @@ fn main() -> anyhow::Result<()> {
         file_path: args.path,
         todo_list: Items::from(&lines),
         message: None,
+        save_on_exit: args.save_on_exit,
     };
 
     while model.running_state != RunningState::Done {
@@ -304,5 +336,9 @@ fn main() -> anyhow::Result<()> {
     }
 
     ratatui::try_restore()?;
+    if let Some(UserMessage::Error(msg)) = &model.message {
+        println!("error: {}", msg);
+    }
+
     Ok(())
 }

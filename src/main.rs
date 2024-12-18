@@ -14,8 +14,7 @@ use std::io::Write;
 use std::time::Duration;
 
 const TITLE_FG_COLOR: Color = Color::from_u32(0x282828);
-const TITLE_BG_COLOR: Color = Color::from_u32(0xd3869b);
-const SELECTED_ITEM_TEXT_FG_COLOR: Color = Color::from_u32(0xfb4934);
+const PRIMARY_COLOR: Color = Color::from_u32(0xd3869b);
 const TITLE: &str = " shfl ";
 
 #[derive(Parser, Debug)]
@@ -97,7 +96,7 @@ impl From<&Item> for ListItem<'_> {
     fn from(value: &Item) -> Self {
         let line = match value.status {
             Selected::No => Line::from(value.line.clone()),
-            Selected::Yes => Line::styled(value.line.clone(), SELECTED_ITEM_TEXT_FG_COLOR),
+            Selected::Yes => Line::styled(value.line.clone(), PRIMARY_COLOR),
         };
         ListItem::new(line)
     }
@@ -118,19 +117,36 @@ enum RunningState {
 
 #[derive(PartialEq)]
 enum Message {
-    GoToNext,
-    GoToPrevious,
-    GoToFirst,
-    GoToLast,
-    SwitchWithNext,
-    SwitchWithPrevious,
-    SwitchWithFirst,
+    MoveToIndex(usize),
+    GoToNextItem,
+    GoToPreviousPreview,
+    GoToFirstItem,
+    GoToLastItem,
+    SwitchWithNextItem,
+    SwitchWithPreviousItem,
+    SwitchWithFirstItem,
     ToggleSelection,
     SaveSelection,
     Quit,
 }
 
 impl Model {
+    fn move_to_index(&mut self, index: usize) {
+        if index > self.todo_list.items.len() - 1 {
+            self.message = Some(UserMessage::Error("index is out of range".to_string()));
+            return;
+        }
+
+        let current = self.todo_list.state.selected();
+        if let Some(i) = current {
+            if i == index {
+                return;
+            }
+            let removed = self.todo_list.items.remove(i);
+            self.todo_list.items.insert(index, removed);
+            self.todo_list.state.select(Some(index));
+        }
+    }
     fn select_next(&mut self) {
         self.todo_list.state.select_next();
     }
@@ -215,13 +231,14 @@ impl Model {
 fn update(model: &mut Model, msg: Message) -> Option<Message> {
     model.message = None;
     match msg {
-        Message::GoToNext => model.select_next(),
-        Message::GoToPrevious => model.select_previous(),
-        Message::GoToLast => model.select_last(),
-        Message::GoToFirst => model.select_first(),
-        Message::SwitchWithNext => model.switch_with_next(),
-        Message::SwitchWithPrevious => model.switch_with_previous(),
-        Message::SwitchWithFirst => model.switch_with_first(),
+        Message::MoveToIndex(i) => model.move_to_index(i),
+        Message::GoToNextItem => model.select_next(),
+        Message::GoToPreviousPreview => model.select_previous(),
+        Message::GoToLastItem => model.select_last(),
+        Message::GoToFirstItem => model.select_first(),
+        Message::SwitchWithNextItem => model.switch_with_next(),
+        Message::SwitchWithPreviousItem => model.switch_with_previous(),
+        Message::SwitchWithFirstItem => model.switch_with_first(),
         Message::ToggleSelection => model.toggle_current(),
         Message::SaveSelection => model.save_selection(),
         Message::Quit => model.go_back_or_quit(),
@@ -241,7 +258,7 @@ fn view(model: &mut Model, frame: &mut Frame) {
     let base_title_style = Style::new().bold();
     let title_style = match model.message {
         Some(_) => base_title_style,
-        None => base_title_style.bg(TITLE_BG_COLOR).fg(TITLE_FG_COLOR),
+        None => base_title_style.bg(PRIMARY_COLOR).fg(TITLE_FG_COLOR),
     };
     let list = List::new(items)
         .block(
@@ -253,7 +270,7 @@ fn view(model: &mut Model, frame: &mut Frame) {
         .style(Style::new().white())
         .repeat_highlight_symbol(true)
         .highlight_symbol(">> ")
-        .highlight_style(Style::new().fg(SELECTED_ITEM_TEXT_FG_COLOR))
+        .highlight_style(Style::new().fg(PRIMARY_COLOR))
         .direction(ListDirection::TopToBottom);
 
     frame.render_stateful_widget(list, frame.area(), &mut model.todo_list.state)
@@ -272,13 +289,22 @@ fn handle_event(_: &Model) -> anyhow::Result<Option<Message>> {
 
 fn handle_key(key: event::KeyEvent) -> Option<Message> {
     match key.code {
-        KeyCode::Char('j') => Some(Message::GoToNext),
-        KeyCode::Char('k') => Some(Message::GoToPrevious),
-        KeyCode::Char('g') => Some(Message::GoToFirst),
-        KeyCode::Char('G') => Some(Message::GoToLast),
-        KeyCode::Char('J') => Some(Message::SwitchWithNext),
-        KeyCode::Char('K') => Some(Message::SwitchWithPrevious),
-        KeyCode::Enter => Some(Message::SwitchWithFirst),
+        KeyCode::Char('1') => Some(Message::MoveToIndex(0)),
+        KeyCode::Char('2') => Some(Message::MoveToIndex(1)),
+        KeyCode::Char('3') => Some(Message::MoveToIndex(2)),
+        KeyCode::Char('4') => Some(Message::MoveToIndex(3)),
+        KeyCode::Char('5') => Some(Message::MoveToIndex(4)),
+        KeyCode::Char('6') => Some(Message::MoveToIndex(5)),
+        KeyCode::Char('7') => Some(Message::MoveToIndex(6)),
+        KeyCode::Char('8') => Some(Message::MoveToIndex(7)),
+        KeyCode::Char('9') => Some(Message::MoveToIndex(8)),
+        KeyCode::Char('j') => Some(Message::GoToNextItem),
+        KeyCode::Char('k') => Some(Message::GoToPreviousPreview),
+        KeyCode::Char('g') => Some(Message::GoToFirstItem),
+        KeyCode::Char('G') => Some(Message::GoToLastItem),
+        KeyCode::Char('J') => Some(Message::SwitchWithNextItem),
+        KeyCode::Char('K') => Some(Message::SwitchWithPreviousItem),
+        KeyCode::Enter => Some(Message::SwitchWithFirstItem),
         KeyCode::Char('s') | KeyCode::Char(' ') => Some(Message::ToggleSelection),
         KeyCode::Esc | KeyCode::Char('q') => Some(Message::Quit),
         KeyCode::Char('w') => Some(Message::SaveSelection),

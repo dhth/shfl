@@ -2,3 +2,4 @@
 justfile
 todo.md
 *.rs.tmp*
+test.txt

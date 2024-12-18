@@ -1,0 +1,26 @@
+name: build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    paths:
+      - "*Cargo.*"
+      - "**/*.rs"
+      - ".github/workflows/*.yml"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Build
+        run: cargo build

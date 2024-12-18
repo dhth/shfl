@@ -6,6 +6,7 @@ mod view;
 
 use anyhow::Context;
 use clap::Parser;
+use common::UNEXPECTED_ERROR_MESSAGE;
 use model::{Items, Model, RunningState, UserMessage};
 use std::fs::File;
 use update::{handle_event, update};
@@ -19,7 +20,7 @@ struct Args {
     /// File path
     #[arg(value_name = "STRING")]
     path: String,
-    /// Save on exit
+    /// If set, shfl will save the new order of lines on exit
     #[arg(short = 's', long = "save-on-exit", value_name = "STRING")]
     save_on_exit: bool,
 }
@@ -38,7 +39,7 @@ fn main() -> anyhow::Result<()> {
     })?;
 
     let mut terminal = ratatui::init();
-    terminal.clear()?;
+    terminal.clear().context(UNEXPECTED_ERROR_MESSAGE)?;
 
     let mut model = Model {
         running_state: RunningState::Running,
@@ -49,15 +50,17 @@ fn main() -> anyhow::Result<()> {
     };
 
     while model.running_state != RunningState::Done {
-        terminal.draw(|f| view(&mut model, f))?;
-        let mut current_msg = handle_event(&model)?;
+        terminal
+            .draw(|f| view(&mut model, f))
+            .context(UNEXPECTED_ERROR_MESSAGE)?;
+        let mut current_msg = handle_event(&model).context(UNEXPECTED_ERROR_MESSAGE)?;
 
         while current_msg.is_some() {
             current_msg = update(&mut model, current_msg.unwrap());
         }
     }
 
-    ratatui::try_restore()?;
+    ratatui::try_restore().context(UNEXPECTED_ERROR_MESSAGE)?;
     if let Some(UserMessage::Error(msg)) = &model.message {
         println!("error: {}", msg);
     }

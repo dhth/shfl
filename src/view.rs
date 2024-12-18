@@ -7,7 +7,7 @@ use ratatui::{
 };
 
 pub(crate) fn view(model: &mut Model, frame: &mut Frame) {
-    let items: Vec<ListItem> = model.todo_list.items.iter().map(ListItem::from).collect();
+    let items: Vec<ListItem> = model.lines.items.iter().map(ListItem::from).collect();
 
     let title = model
         .message
@@ -33,5 +33,5 @@ pub(crate) fn view(model: &mut Model, frame: &mut Frame) {
         .highlight_style(Style::new().fg(PRIMARY_COLOR))
         .direction(ListDirection::TopToBottom);
 
-    frame.render_stateful_widget(list, frame.area(), &mut model.todo_list.state)
+    frame.render_stateful_widget(list, frame.area(), &mut model.lines.state)
 }

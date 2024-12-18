@@ -8,20 +8,20 @@ use ratatui::{
 pub(crate) struct Model {
     pub(crate) running_state: RunningState,
     pub(crate) file_path: String,
-    pub(crate) todo_list: Items,
+    pub(crate) lines: Lines,
     pub(crate) message: Option<UserMessage>,
     pub(crate) save_on_exit: bool,
 }
 
 #[derive(Debug)]
-pub(crate) struct Items {
-    pub(crate) items: Vec<Item>,
+pub(crate) struct Lines {
+    pub(crate) items: Vec<LineItem>,
     pub(crate) state: ListState,
 }
 
 #[derive(Debug)]
-pub(crate) struct Item {
-    pub(crate) line: String,
+pub(crate) struct LineItem {
+    pub(crate) content: String,
     pub(crate) status: Selected,
 }
 
@@ -68,11 +68,11 @@ impl UserMessage {
     }
 }
 
-impl From<&Vec<String>> for Items {
+impl From<&Vec<String>> for Lines {
     fn from(value: &Vec<String>) -> Self {
         let items = value
             .iter()
-            .map(|line| Item::new(line, Selected::No))
+            .map(|line| LineItem::new(line, Selected::No))
             .collect();
         let state = ListState::default().with_selected(Some(0));
 
@@ -80,10 +80,10 @@ impl From<&Vec<String>> for Items {
     }
 }
 
-impl Item {
+impl LineItem {
     fn new(line: &str, status: Selected) -> Self {
         Self {
-            line: line.to_string(),
+            content: line.to_string(),
             status,
         }
     }
@@ -96,11 +96,11 @@ impl Item {
     }
 }
 
-impl From<&Item> for ListItem<'_> {
-    fn from(value: &Item) -> Self {
+impl From<&LineItem> for ListItem<'_> {
+    fn from(value: &LineItem) -> Self {
         let line = match value.status {
-            Selected::No => Line::from(value.line.clone()),
-            Selected::Yes => Line::styled(value.line.clone(), PRIMARY_COLOR),
+            Selected::No => Line::from(value.content.clone()),
+            Selected::Yes => Line::styled(value.content.clone(), PRIMARY_COLOR),
         };
         ListItem::new(line)
     }
@@ -108,80 +108,80 @@ impl From<&Item> for ListItem<'_> {
 
 impl Model {
     pub(crate) fn move_to_index(&mut self, index: usize) {
-        if index > self.todo_list.items.len() - 1 {
+        if index > self.lines.items.len() - 1 {
             self.message = Some(UserMessage::Error("index is out of range".to_string()));
             return;
         }
 
-        let current = self.todo_list.state.selected();
+        let current = self.lines.state.selected();
         if let Some(i) = current {
             if i == index {
                 return;
             }
-            let removed = self.todo_list.items.remove(i);
-            self.todo_list.items.insert(index, removed);
-            self.todo_list.state.select(Some(index));
+            let removed = self.lines.items.remove(i);
+            self.lines.items.insert(index, removed);
+            self.lines.state.select(Some(index));
         }
     }
     pub(crate) fn select_next(&mut self) {
-        self.todo_list.state.select_next();
+        self.lines.state.select_next();
     }
     pub(crate) fn select_previous(&mut self) {
-        self.todo_list.state.select_previous();
+        self.lines.state.select_previous();
     }
     pub(crate) fn select_first(&mut self) {
-        self.todo_list.state.select_first();
+        self.lines.state.select_first();
     }
     pub(crate) fn select_last(&mut self) {
-        self.todo_list.state.select_last();
+        self.lines.state.select_last();
     }
     pub(crate) fn switch_with_next(&mut self) {
-        let current = self.todo_list.state.selected();
+        let current = self.lines.state.selected();
         if let Some(i) = current {
-            if i == self.todo_list.items.len() - 1 {
+            if i == self.lines.items.len() - 1 {
                 return;
             }
-            self.todo_list.items.swap(i, i + 1);
-            self.todo_list.state.select_next();
+            self.lines.items.swap(i, i + 1);
+            self.lines.state.select_next();
         }
     }
     pub(crate) fn switch_with_previous(&mut self) {
-        let current = self.todo_list.state.selected();
+        let current = self.lines.state.selected();
         if let Some(i) = current {
             if i == 0 {
                 return;
             }
-            self.todo_list.items.swap(i, i - 1);
-            self.todo_list.state.select_previous();
+            self.lines.items.swap(i, i - 1);
+            self.lines.state.select_previous();
         }
     }
     pub(crate) fn switch_with_first(&mut self) {
-        let current = self.todo_list.state.selected();
+        let current = self.lines.state.selected();
         if let Some(i) = current {
             match i {
                 0 => (),
-                1 => self.todo_list.items.swap(0, 1),
+                1 => self.lines.items.swap(0, 1),
                 _ => {
-                    self.todo_list.items[0..i + 1].rotate_right(1);
+                    self.lines.items[0..i + 1].rotate_right(1);
                 }
             };
-            self.todo_list.state.select_first();
+            self.lines.state.select_first();
         }
     }
 
     pub(crate) fn toggle_current(&mut self) {
-        let current = self.todo_list.state.selected();
+        let current = self.lines.state.selected();
         if let Some(i) = current {
-            self.todo_list.items[i].toggle();
+            self.lines.items[i].toggle();
         }
     }
 
     pub(crate) fn save_selection(&mut self) {
         let items: Vec<&str> = self
-            .todo_list
+            .lines
             .items
             .iter()
-            .map(|item| item.line.as_str())
+            .map(|item| item.content.as_str())
             .collect();
 
         let write_result = write_to_file(items, self.file_path.as_str());

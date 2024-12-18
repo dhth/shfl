@@ -7,7 +7,7 @@ mod view;
 use anyhow::Context;
 use clap::Parser;
 use common::UNEXPECTED_ERROR_MESSAGE;
-use model::{Items, Model, RunningState, UserMessage};
+use model::{Lines, Model, RunningState, UserMessage};
 use std::fs::File;
 use update::{handle_event, update};
 use utils::read_from_file;
@@ -44,7 +44,7 @@ fn main() -> anyhow::Result<()> {
     let mut model = Model {
         running_state: RunningState::Running,
         file_path: args.path,
-        todo_list: Items::from(&lines),
+        lines: Lines::from(&lines),
         message: None,
         save_on_exit: args.save_on_exit,
     };

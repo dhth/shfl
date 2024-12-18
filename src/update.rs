@@ -1,4 +1,5 @@
-use crate::model::{Message, Model};
+use crate::message::Message;
+use crate::model::{Model, View};
 use ratatui::crossterm::event::{self, Event, KeyCode};
 use std::time::Duration;
 
@@ -15,6 +16,7 @@ pub(crate) fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::SwitchWithFirstItem => model.switch_with_first(),
         Message::ToggleSelection => model.toggle_current(),
         Message::SaveSelection => model.save_selection(),
+        Message::ShowView(v) => model.show_view(v),
         Message::Quit => model.go_back_or_quit(),
     };
     None
@@ -51,6 +53,7 @@ pub(crate) fn handle_key(key: event::KeyEvent) -> Option<Message> {
         KeyCode::Enter => Some(Message::SwitchWithFirstItem),
         KeyCode::Char('s') | KeyCode::Char(' ') => Some(Message::ToggleSelection),
         KeyCode::Esc | KeyCode::Char('q') => Some(Message::Quit),
+        KeyCode::Char('?') => Some(Message::ShowView(View::Help)),
         KeyCode::Char('w') => Some(Message::SaveSelection),
         _ => None,
     }

@@ -6,6 +6,7 @@ use ratatui::{
 
 #[derive(Debug)]
 pub(crate) struct Model {
+    pub(crate) view: View,
     pub(crate) running_state: RunningState,
     pub(crate) file_path: String,
     pub(crate) lines: Lines,
@@ -38,25 +39,16 @@ pub(crate) enum RunningState {
     Done,
 }
 
-#[derive(PartialEq)]
-pub(crate) enum Message {
-    MoveToIndex(usize),
-    GoToNextItem,
-    GoToPreviousPreview,
-    GoToFirstItem,
-    GoToLastItem,
-    SwitchWithNextItem,
-    SwitchWithPreviousItem,
-    SwitchWithFirstItem,
-    ToggleSelection,
-    SaveSelection,
-    Quit,
-}
-
 #[derive(Debug)]
 pub(crate) enum UserMessage {
     Success(String),
     Error(String),
+}
+
+#[derive(PartialEq, Debug)]
+pub(crate) enum View {
+    List,
+    Help,
 }
 
 impl UserMessage {
@@ -196,10 +188,22 @@ impl Model {
         }
     }
 
-    pub(crate) fn go_back_or_quit(&mut self) {
-        if self.save_on_exit {
-            self.save_selection();
+    pub(crate) fn show_view(&mut self, view: View) {
+        self.view = match self.view {
+            View::Help => View::List,
+            _ => view,
         }
-        self.running_state = RunningState::Done;
+    }
+
+    pub(crate) fn go_back_or_quit(&mut self) {
+        match self.view {
+            View::List => {
+                if self.save_on_exit {
+                    self.save_selection();
+                }
+                self.running_state = RunningState::Done;
+            }
+            View::Help => self.view = View::List,
+        }
     }
 }

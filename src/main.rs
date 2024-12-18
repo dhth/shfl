@@ -1,4 +1,5 @@
 mod common;
+mod message;
 mod model;
 mod update;
 mod utils;
@@ -7,7 +8,7 @@ mod view;
 use anyhow::Context;
 use clap::Parser;
 use common::UNEXPECTED_ERROR_MESSAGE;
-use model::{Lines, Model, RunningState, UserMessage};
+use model::{Lines, Model, RunningState, UserMessage, View};
 use std::fs::File;
 use update::{handle_event, update};
 use utils::read_from_file;
@@ -42,6 +43,7 @@ fn main() -> anyhow::Result<()> {
     terminal.clear().context(UNEXPECTED_ERROR_MESSAGE)?;
 
     let mut model = Model {
+        view: View::List,
         running_state: RunningState::Running,
         file_path: args.path,
         lines: Lines::from(&lines),

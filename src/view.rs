@@ -1,12 +1,24 @@
 use crate::common::{PRIMARY_COLOR, TITLE, TITLE_FG_COLOR};
 use crate::model::Model;
+use crate::model::View;
 use ratatui::{
+    layout::Alignment,
     style::{Style, Stylize},
-    widgets::{Block, List, ListDirection, ListItem, Padding},
+    text::Line,
+    widgets::{Block, List, ListDirection, ListItem, Padding, Paragraph},
     Frame,
 };
 
+const HELP_CONTENTS: &str = include_str!("static/help.txt");
+
 pub(crate) fn view(model: &mut Model, frame: &mut Frame) {
+    match model.view {
+        View::List => render_list_view(model, frame),
+        View::Help => render_help_view(frame),
+    }
+}
+
+fn render_list_view(model: &mut Model, frame: &mut Frame) {
     let items: Vec<ListItem> = model.lines.items.iter().map(ListItem::from).collect();
 
     let title = model
@@ -20,13 +32,13 @@ pub(crate) fn view(model: &mut Model, frame: &mut Frame) {
         Some(_) => base_title_style,
         None => base_title_style.bg(PRIMARY_COLOR).fg(TITLE_FG_COLOR),
     };
+
+    let block = Block::default()
+        .title_bottom(title)
+        .title_style(title_style);
+
     let list = List::new(items)
-        .block(
-            Block::default()
-                .title_bottom(title)
-                .padding(Padding::bottom(1))
-                .title_style(title_style),
-        )
+        .block(block)
         .style(Style::new().white())
         .repeat_highlight_symbol(true)
         .highlight_symbol(">> ")
@@ -34,4 +46,22 @@ pub(crate) fn view(model: &mut Model, frame: &mut Frame) {
         .direction(ListDirection::TopToBottom);
 
     frame.render_stateful_widget(list, frame.area(), &mut model.lines.state)
+}
+
+fn render_help_view(frame: &mut Frame) {
+    let title_style = Style::new().bold().bg(PRIMARY_COLOR).fg(TITLE_FG_COLOR);
+
+    let block = Block::default()
+        .title_bottom(TITLE)
+        .padding(Padding::left(1))
+        .title_style(title_style);
+
+    let lines: Vec<Line<'_>> = HELP_CONTENTS.lines().map(Line::from).collect();
+
+    let p = Paragraph::new(lines)
+        .block(block)
+        .style(Style::new().white())
+        .alignment(Alignment::Left);
+
+    frame.render_widget(p, frame.area())
 }

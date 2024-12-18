@@ -1,9 +1,8 @@
+use crate::{common::PRIMARY_COLOR, utils::write_to_file};
 use ratatui::{
     text::Line,
     widgets::{ListItem, ListState},
 };
-
-use crate::{common::PRIMARY_COLOR, utils::write_to_file};
 
 #[derive(Debug)]
 pub(crate) struct Model {

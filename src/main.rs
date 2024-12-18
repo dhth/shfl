@@ -4,16 +4,15 @@ mod update;
 mod utils;
 mod view;
 
-use std::fs::File;
-use update::update;
-use view::view;
-
 use anyhow::Context;
 use clap::Parser;
 use model::{Items, Model, RunningState, UserMessage};
-use update::handle_event;
+use std::fs::File;
+use update::{handle_event, update};
 use utils::read_from_file;
+use view::view;
 
+/// shfl helps you easily rearrange lines in a file with simple keymaps
 #[derive(Parser, Debug)]
 #[command(about, long_about=None)]
 struct Args {

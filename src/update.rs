@@ -1,5 +1,4 @@
 use crate::model::{Message, Model};
-
 use ratatui::crossterm::event::{self, Event, KeyCode};
 use std::time::Duration;
 

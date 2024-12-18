@@ -1,5 +1,5 @@
 ✨ Overview
 ---
 
-`shfl` (short for "shuffle") is a tiny command-line utility to help quickly
-rearrange lines in a file.
+`shfl` (short for "shuffle") helps you easily rearrange lines in a file with
+simple keymaps.

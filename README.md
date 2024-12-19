@@ -20,9 +20,7 @@ keymaps to reorder lines in a file.
 💾 Installation
 ---
 
-**homebrew**:
-
-**go**:
+**cargo**:
 
 ```sh
 cargo install --git https://github.com/dhth/shfl.git

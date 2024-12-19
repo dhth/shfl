@@ -1,4 +1,4 @@
-use crate::common::PRIMARY_COLOR;
+use crate::common::{View, PRIMARY_COLOR};
 use ratatui::{
     text::Line,
     widgets::{ListItem, ListState},
@@ -43,12 +43,6 @@ pub(crate) enum RunningState {
 pub(crate) enum UserMessage {
     Success(String),
     Error(String),
-}
-
-#[derive(PartialEq, Debug)]
-pub(crate) enum View {
-    List,
-    Help,
 }
 
 impl UserMessage {

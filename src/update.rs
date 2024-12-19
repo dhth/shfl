@@ -1,5 +1,6 @@
+use crate::common::View;
 use crate::message::Message;
-use crate::model::{Model, RunningState, UserMessage, View};
+use crate::model::{Model, RunningState, UserMessage};
 use crate::utils::write_to_file;
 use ratatui::crossterm::event::{self, Event, KeyCode};
 use std::time::Duration;
@@ -84,6 +85,7 @@ fn move_to_index(model: &mut Model, index: usize) -> Option<Message> {
 
     None
 }
+
 fn select_next(model: &mut Model) -> Option<Message> {
     model.lines.state.select_next();
     None

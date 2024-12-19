@@ -7,8 +7,8 @@ mod view;
 
 use anyhow::Context;
 use clap::Parser;
-use common::UNEXPECTED_ERROR_MESSAGE;
-use model::{Lines, Model, RunningState, UserMessage, View};
+use common::{View, UNEXPECTED_ERROR_MESSAGE};
+use model::{Lines, Model, RunningState, UserMessage};
 use std::fs::File;
 use update::{handle_event, update};
 use utils::read_from_file;

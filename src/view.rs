@@ -1,6 +1,5 @@
-use crate::common::{PRIMARY_COLOR, TITLE, TITLE_FG_COLOR};
+use crate::common::{View, PRIMARY_COLOR, TITLE, TITLE_FG_COLOR};
 use crate::model::Model;
-use crate::model::View;
 use ratatui::{
     layout::Alignment,
     style::{Style, Stylize},

@@ -1,4 +1,4 @@
-use crate::model::View;
+use crate::common::View;
 
 #[derive(PartialEq)]
 pub(crate) enum Message {

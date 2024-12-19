@@ -25,7 +25,7 @@ keymaps to reorder lines in a file.
 **go**:
 
 ```sh
-go install github.com/dhth/shfl@latest
+cargo install --git https://github.com/dhth/shfl.git
 ```
 
 ⌨️ Keymaps

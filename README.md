@@ -4,6 +4,8 @@
 `shfl` (short for "shuffle") helps you easily rearrange lines in a file with
 simple keymaps.
 
+![screenshot](https://github.com/user-attachments/assets/aca8f113-3b63-4854-924f-09817897bb60)
+
 🤔 Motivation
 ---
 

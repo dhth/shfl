@@ -1,5 +1,6 @@
-use crate::common::{View, PRIMARY_COLOR};
+use crate::common::{View, SELECTED_COLOR};
 use ratatui::{
+    style::Style,
     text::Line,
     widgets::{ListItem, ListState},
 };
@@ -10,8 +11,23 @@ pub(crate) struct Model {
     pub(crate) running_state: RunningState,
     pub(crate) file_path: String,
     pub(crate) lines: Lines,
+    pub(crate) selected_count: usize,
     pub(crate) message: Option<UserMessage>,
     pub(crate) save_on_exit: bool,
+}
+
+impl Model {
+    pub(crate) fn default(file_path: String, lines: &Vec<String>, save_on_exit: bool) -> Self {
+        Self {
+            view: View::List,
+            running_state: RunningState::Running,
+            file_path,
+            lines: Lines::from(lines),
+            selected_count: 0,
+            message: None,
+            save_on_exit,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -20,13 +36,13 @@ pub(crate) struct Lines {
     pub(crate) state: ListState,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct LineItem {
     pub(crate) content: String,
     pub(crate) status: Selected,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) enum Selected {
     Yes,
     No,
@@ -74,10 +90,16 @@ impl LineItem {
         }
     }
 
-    pub(crate) fn toggle(&mut self) {
+    pub(crate) fn toggle(&mut self) -> bool {
         match self.status {
-            Selected::Yes => self.status = Selected::No,
-            Selected::No => self.status = Selected::Yes,
+            Selected::Yes => {
+                self.status = Selected::No;
+                false
+            }
+            Selected::No => {
+                self.status = Selected::Yes;
+                true
+            }
         }
     }
 }
@@ -86,7 +108,10 @@ impl From<&LineItem> for ListItem<'_> {
     fn from(value: &LineItem) -> Self {
         let line = match value.status {
             Selected::No => Line::from(value.content.clone()),
-            Selected::Yes => Line::styled(value.content.clone(), PRIMARY_COLOR),
+            Selected::Yes => Line::styled(
+                format!("> {}", value.content.clone()),
+                Style::new().fg(SELECTED_COLOR),
+            ),
         };
         ListItem::new(line)
     }

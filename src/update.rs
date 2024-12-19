@@ -1,6 +1,6 @@
 use crate::common::View;
 use crate::message::Message;
-use crate::model::{Model, RunningState, UserMessage};
+use crate::model::{LineItem, Model, RunningState, Selected, UserMessage};
 use crate::utils::write_to_file;
 use ratatui::crossterm::event::{self, Event, KeyCode};
 use std::time::Duration;
@@ -34,7 +34,7 @@ fn handle_key(model: &Model, key: event::KeyEvent) -> Option<Message> {
             KeyCode::Char('G') => Some(Message::GoToLastItem),
             KeyCode::Char('J') => Some(Message::SwitchWithNextItem),
             KeyCode::Char('K') => Some(Message::SwitchWithPreviousItem),
-            KeyCode::Enter => Some(Message::SwitchWithFirstItem),
+            KeyCode::Enter => Some(Message::MoveToTop),
             KeyCode::Char('s') | KeyCode::Char(' ') => Some(Message::ToggleSelection),
             KeyCode::Esc | KeyCode::Char('q') => Some(Message::Quit),
             KeyCode::Char('?') => Some(Message::ShowView(View::Help)),
@@ -59,7 +59,7 @@ pub(crate) fn update(model: &mut Model, msg: Message) -> Option<Message> {
         Message::GoToFirstItem => select_first(model),
         Message::SwitchWithNextItem => switch_with_next(model),
         Message::SwitchWithPreviousItem => switch_with_previous(model),
-        Message::SwitchWithFirstItem => switch_with_first(model),
+        Message::MoveToTop => move_to_top(model),
         Message::ToggleSelection => toggle_current(model),
         Message::SaveSelection => save_selection(model),
         Message::ShowView(v) => show_view(model, v),
@@ -68,6 +68,10 @@ pub(crate) fn update(model: &mut Model, msg: Message) -> Option<Message> {
 }
 
 fn move_to_index(model: &mut Model, index: usize) -> Option<Message> {
+    if model.selected_count > 0 {
+        model.message = Some(UserMessage::Error("remove selection first".to_string()));
+        return None;
+    }
     if index > model.lines.items.len() - 1 {
         model.message = Some(UserMessage::Error("index is out of range".to_string()));
         return None;
@@ -82,6 +86,40 @@ fn move_to_index(model: &mut Model, index: usize) -> Option<Message> {
         model.lines.items.insert(index, removed);
         model.lines.state.select(Some(index));
     }
+
+    None
+}
+
+fn move_selection_to_top(model: &mut Model) -> Option<Message> {
+    if model.selected_count == model.lines.items.len() {
+        model.lines.items.iter_mut().for_each(|i| {
+            i.status = Selected::No;
+        });
+        model.selected_count = 0;
+        return None;
+    }
+
+    let mut selected: Vec<LineItem> = Vec::with_capacity(model.selected_count);
+    let mut unselected: Vec<LineItem> =
+        Vec::with_capacity(model.lines.items.len() - model.selected_count);
+
+    model.lines.items.iter().for_each(|i| match i.status {
+        Selected::Yes => {
+            let mut item = i.clone();
+            item.status = Selected::No;
+            selected.push(item);
+        }
+        Selected::No => unselected.push(i.clone()),
+    });
+
+    if selected.is_empty() {
+        return None;
+    }
+
+    selected.extend(unselected);
+    model.lines.items = selected;
+    model.lines.state.select(Some(0));
+    model.selected_count = 0;
 
     None
 }
@@ -124,7 +162,15 @@ fn switch_with_previous(model: &mut Model) -> Option<Message> {
     }
     None
 }
-fn switch_with_first(model: &mut Model) -> Option<Message> {
+
+fn move_to_top(model: &mut Model) -> Option<Message> {
+    match model.selected_count {
+        0 => move_item_to_top(model),
+        _ => move_selection_to_top(model),
+    }
+}
+
+fn move_item_to_top(model: &mut Model) -> Option<Message> {
     let current = model.lines.state.selected();
     if let Some(i) = current {
         match i {
@@ -142,9 +188,13 @@ fn switch_with_first(model: &mut Model) -> Option<Message> {
 fn toggle_current(model: &mut Model) -> Option<Message> {
     let current = model.lines.state.selected();
     if let Some(i) = current {
-        model.lines.items[i].toggle();
+        let selected = model.lines.items[i].toggle();
+        match selected {
+            true => model.selected_count += 1,
+            false => model.selected_count -= 1,
+        }
     }
-    None
+    select_next(model)
 }
 
 fn save_selection(model: &mut Model) -> Option<Message> {
@@ -176,16 +226,173 @@ fn show_view(model: &mut Model, view: View) -> Option<Message> {
     None
 }
 
+fn unselect_selected_items(model: &mut Model) {
+    model.lines.items.iter_mut().for_each(|i| {
+        i.status = Selected::No;
+    });
+    model.selected_count = 0;
+}
+
 fn go_back_or_quit(model: &mut Model) -> Option<Message> {
     match model.view {
-        View::List => {
-            if model.save_on_exit {
-                let _ = save_selection(model);
+        View::List => match model.selected_count {
+            0 => {
+                if model.save_on_exit {
+                    let _ = save_selection(model);
+                }
+                model.running_state = RunningState::Done;
             }
-            model.running_state = RunningState::Done;
-        }
+            _ => unselect_selected_items(model),
+        },
         View::Help => model.view = View::List,
     };
 
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn move_item_to_top_works() {
+        // GIVEN
+        let lines: Vec<String> = (0..5).map(|n| n.to_string()).collect();
+        let mut model = Model::default("file.txt".to_string(), &lines, false);
+
+        model.lines.state.select(Some(2));
+
+        // WHEN
+        let message = move_item_to_top(&mut model);
+
+        // THEN
+        assert!(message.is_none());
+        let expected: Vec<&str> = model
+            .lines
+            .items
+            .iter()
+            .map(|i| i.content.as_str())
+            .collect();
+
+        assert!(expected == vec!["2", "0", "1", "3", "4"]);
+    }
+
+    #[test]
+    fn move_to_index_works() {
+        // GIVEN
+        let lines: Vec<String> = (0..5).map(|n| n.to_string()).collect();
+        let mut model = Model::default("file.txt".to_string(), &lines, false);
+
+        model.lines.state.select(Some(4));
+
+        // WHEN
+        let message = move_to_index(&mut model, 1);
+
+        // THEN
+        assert!(message.is_none());
+        let expected: Vec<&str> = model
+            .lines
+            .items
+            .iter()
+            .map(|i| i.content.as_str())
+            .collect();
+
+        assert!(expected == vec!["0", "4", "1", "2", "3"]);
+    }
+
+    #[test]
+    fn move_to_index_works_handles_an_index_out_of_bounds() {
+        // GIVEN
+        let lines: Vec<String> = (0..5).map(|n| n.to_string()).collect();
+        let mut model = Model::default("file.txt".to_string(), &lines, false);
+
+        model.lines.state.select(Some(4));
+
+        // WHEN
+        let message = move_to_index(&mut model, 6);
+
+        // THEN
+        assert!(message.is_none());
+        assert!(model.message.is_some());
+        let expected: Vec<&str> = model
+            .lines
+            .items
+            .iter()
+            .map(|i| i.content.as_str())
+            .collect();
+
+        assert!(expected == vec!["0", "1", "2", "3", "4"]);
+    }
+
+    #[test]
+    fn move_selection_to_top_works() {
+        // GIVEN
+        let lines: Vec<String> = (0..10).map(|n| n.to_string()).collect();
+        let mut model = Model::default("file.txt".to_string(), &lines, false);
+        model.lines.items[1..3]
+            .iter_mut()
+            .for_each(|i| i.status = Selected::Yes);
+        model.lines.items[5].status = Selected::Yes;
+        model.lines.items[7..9]
+            .iter_mut()
+            .for_each(|i| i.status = Selected::Yes);
+
+        // WHEN
+        let message = move_selection_to_top(&mut model);
+
+        // THEN
+        assert!(message.is_none());
+        let expected: Vec<&str> = model
+            .lines
+            .items
+            .iter()
+            .map(|i| i.content.as_str())
+            .collect();
+
+        assert!(expected == vec!["1", "2", "5", "7", "8", "0", "3", "4", "6", "9"]);
+    }
+
+    #[test]
+    fn switch_with_next_works() {
+        // GIVEN
+        let lines: Vec<String> = (0..5).map(|n| n.to_string()).collect();
+        let mut model = Model::default("file.txt".to_string(), &lines, false);
+        model.lines.state.select(Some(2));
+
+        // WHEN
+        let message = switch_with_next(&mut model);
+
+        // THEN
+        assert!(message.is_none());
+        let expected: Vec<&str> = model
+            .lines
+            .items
+            .iter()
+            .map(|i| i.content.as_str())
+            .collect();
+
+        assert!(expected == vec!["0", "1", "3", "2", "4"]);
+    }
+
+    #[test]
+    fn switch_with_previous_works() {
+        // GIVEN
+        let lines: Vec<String> = (0..5).map(|n| n.to_string()).collect();
+        let mut model = Model::default("file.txt".to_string(), &lines, false);
+        model.lines.state.select(Some(2));
+
+        // WHEN
+        let message = switch_with_previous(&mut model);
+
+        // THEN
+        assert!(message.is_none());
+        let expected: Vec<&str> = model
+            .lines
+            .items
+            .iter()
+            .map(|i| i.content.as_str())
+            .collect();
+
+        assert!(expected == vec!["0", "2", "1", "3", "4"]);
+    }
 }

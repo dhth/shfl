@@ -7,8 +7,8 @@ mod view;
 
 use anyhow::Context;
 use clap::Parser;
-use common::{View, UNEXPECTED_ERROR_MESSAGE};
-use model::{Lines, Model, RunningState, UserMessage};
+use common::UNEXPECTED_ERROR_MESSAGE;
+use model::{Model, RunningState, UserMessage};
 use std::fs::File;
 use update::{handle_event, update};
 use utils::read_from_file;
@@ -42,14 +42,7 @@ fn main() -> anyhow::Result<()> {
     let mut terminal = ratatui::init();
     terminal.clear().context(UNEXPECTED_ERROR_MESSAGE)?;
 
-    let mut model = Model {
-        view: View::List,
-        running_state: RunningState::Running,
-        file_path: args.path,
-        lines: Lines::from(&lines),
-        message: None,
-        save_on_exit: args.save_on_exit,
-    };
+    let mut model = Model::default(args.path, &lines, args.save_on_exit);
 
     while model.running_state != RunningState::Done {
         terminal

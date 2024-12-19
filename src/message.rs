@@ -9,7 +9,7 @@ pub(crate) enum Message {
     GoToLastItem,
     SwitchWithNextItem,
     SwitchWithPreviousItem,
-    SwitchWithFirstItem,
+    MoveToTop,
     ToggleSelection,
     SaveSelection,
     ShowView(View),

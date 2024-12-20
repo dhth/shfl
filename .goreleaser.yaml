@@ -1,0 +1,54 @@
+version: 2
+
+before:
+  hooks:
+    - rustup default stable
+    - cargo fetch --locked
+
+builds:
+  - builder: rust
+    flags:
+      - --release
+    targets:
+      - x86_64-unknown-linux-gnu
+      - x86_64-apple-darwin
+      - aarch64-unknown-linux-gnu
+      - aarch64-apple-darwin
+
+signs:
+  - cmd: cosign
+    signature: "${artifact}.sig"
+    certificate: "${artifact}.pem"
+    args:
+      - "sign-blob"
+      - "--oidc-issuer=https://token.actions.githubusercontent.com"
+      - "--output-certificate=${certificate}"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+      - "--yes"
+    artifacts: checksum
+
+brews:
+  - name: shfl
+    repository:
+      owner: dhth
+      name: homebrew-tap
+    directory: Formula
+    license: MIT
+    homepage: "https://github.com/dhth/shfl"
+    description: "shfl lets you rearrange lines in a file with simple keymaps"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+release:
+  draft: true
+  footer: >-
+
+    ---
+
+    Released by [GoReleaser](https://github.com/goreleaser/goreleaser).

@@ -14,7 +14,7 @@ use update::{handle_event, update};
 use utils::read_from_file;
 use view::view;
 
-/// shfl helps you easily rearrange lines in a file with simple keymaps
+/// shfl lets you easily rearrange lines in a file with simple keymaps
 #[derive(Parser, Debug)]
 #[command(about, long_about=None)]
 struct Args {

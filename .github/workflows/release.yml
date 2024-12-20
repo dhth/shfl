@@ -1,0 +1,43 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Build
+        run: cargo build
+      - name: Install Zig toolchain
+        uses: mlugg/setup-zig@v1
+      - name: Install cargo-zigbuild
+        uses: jaxxstorm/action-install-gh-release@v1.14.0
+        with:
+          repo: rust-cross/cargo-zigbuild
+          tag: v0.19.7
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: 'v2.2.3'
+      - name: Release Binaries
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: '~> v2'
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{secrets.GH_PAT}}

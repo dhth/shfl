@@ -1,10 +1,10 @@
 ✨ Overview
 ---
 
-`shfl` (short for "shuffle") helps you easily rearrange lines in a file with
+`shfl` (short for "shuffle") lets you easily rearrange lines in a file with
 simple keymaps.
 
-![demo](https://github.com/user-attachments/assets/24032428-d249-4275-8b97-a54e7d53d6e5)
+![demo](https://github.com/user-attachments/assets/07bd4b71-f78b-4b82-8080-3b973258bf55)
 
 🤔 Motivation
 ---

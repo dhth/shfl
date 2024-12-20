@@ -5,25 +5,20 @@ Set Height 800
 Set Theme "GruvboxDark"
 
 Set Shell zsh
-Hide
-Type@40ms "shfl ~/projects/shfl/test.txt"
-Show
+Type@50ms "shfl ~/projects/shfl/test.txt"
+Enter
+Sleep 1500ms
+Type@400ms "jjj"
+Sleep 400ms
+Enter
 Sleep 1s
-Enter
-Sleep 500ms
-Type@200ms "jjj"
-Sleep 200ms
-Enter
-Sleep 500ms
-Type "1"
-Sleep 500ms
 Type "9"
+Sleep 1s
+Type@400ms "KKK"
 Sleep 500ms
-Type@300ms "KKK"
-Sleep 400ms
-Type@300ms "JJJ"
-Sleep 400ms
-Type@300ms "sssjsjsss"
+Type@400ms "JJJ"
+Sleep 500ms
+Type@400ms "sssjsjsss"
 Screenshot screenshots/two.png
 Enter
-Sleep 1s
+Sleep 2s

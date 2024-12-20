@@ -10,10 +10,10 @@ simple keymaps.
 ---
 
 I like switching my tmux sessions quickly (using `tmux switch-client -t
-"$session"`). The session names are stored in a local file, and I map a key to a
-session on a specific line number. To easily change which session is assigned to
-which line number, I needed a tool that would start up quickly and have easy
-keymaps to reorder lines in a file.
+"$session"`, triggered via a shortcut). The session names are stored in a local
+file, and I map a key to a session on a specific line number. To easily change
+which session is assigned to which line number, I needed a tool that would start
+up quickly and have easy keymaps to reorder lines in a file.
 
 ![demo](https://github.com/user-attachments/assets/043be534-a50d-46f0-b977-5c373fca2644)
 

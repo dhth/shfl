@@ -39,13 +39,7 @@ pub(crate) struct Lines {
 #[derive(Debug, Clone)]
 pub(crate) struct LineItem {
     pub(crate) content: String,
-    pub(crate) status: Selected,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub(crate) enum Selected {
-    Yes,
-    No,
+    pub(crate) status: bool,
 }
 
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -74,7 +68,7 @@ impl From<&Vec<String>> for Lines {
     fn from(value: &Vec<String>) -> Self {
         let items = value
             .iter()
-            .map(|line| LineItem::new(line, Selected::No))
+            .map(|line| LineItem::new(line, false))
             .collect();
         let state = ListState::default().with_selected(Some(0));
 
@@ -83,7 +77,7 @@ impl From<&Vec<String>> for Lines {
 }
 
 impl LineItem {
-    fn new(line: &str, status: Selected) -> Self {
+    fn new(line: &str, status: bool) -> Self {
         Self {
             content: line.to_string(),
             status,
@@ -92,12 +86,12 @@ impl LineItem {
 
     pub(crate) fn toggle(&mut self) -> bool {
         match self.status {
-            Selected::Yes => {
-                self.status = Selected::No;
+            true => {
+                self.status = false;
                 false
             }
-            Selected::No => {
-                self.status = Selected::Yes;
+            false => {
+                self.status = true;
                 true
             }
         }
@@ -107,8 +101,8 @@ impl LineItem {
 impl From<&LineItem> for ListItem<'_> {
     fn from(value: &LineItem) -> Self {
         let line = match value.status {
-            Selected::No => Line::from(value.content.clone()),
-            Selected::Yes => Line::styled(
+            false => Line::from(value.content.clone()),
+            true => Line::styled(
                 format!("> {}", value.content.clone()),
                 Style::new().fg(SELECTED_COLOR),
             ),

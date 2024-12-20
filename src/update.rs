@@ -1,6 +1,6 @@
 use crate::common::View;
 use crate::message::Message;
-use crate::model::{LineItem, Model, RunningState, Selected, UserMessage};
+use crate::model::{LineItem, Model, RunningState, UserMessage};
 use crate::utils::write_to_file;
 use ratatui::crossterm::event::{self, Event, KeyCode};
 use std::time::Duration;
@@ -93,7 +93,7 @@ fn move_to_index(model: &mut Model, index: usize) -> Option<Message> {
 fn move_selection_to_top(model: &mut Model) -> Option<Message> {
     if model.selected_count == model.lines.items.len() {
         model.lines.items.iter_mut().for_each(|i| {
-            i.status = Selected::No;
+            i.status = false;
         });
         model.selected_count = 0;
         return None;
@@ -104,12 +104,12 @@ fn move_selection_to_top(model: &mut Model) -> Option<Message> {
         Vec::with_capacity(model.lines.items.len() - model.selected_count);
 
     model.lines.items.iter().for_each(|i| match i.status {
-        Selected::Yes => {
+        true => {
             let mut item = i.clone();
-            item.status = Selected::No;
+            item.status = false;
             selected.push(item);
         }
-        Selected::No => unselected.push(i.clone()),
+        false => unselected.push(i.clone()),
     });
 
     if selected.is_empty() {
@@ -189,10 +189,11 @@ fn toggle_current(model: &mut Model) -> Option<Message> {
     let current = model.lines.state.selected();
     if let Some(i) = current {
         let selected = model.lines.items[i].toggle();
-        match selected {
-            true => model.selected_count += 1,
-            false => model.selected_count -= 1,
-        }
+        if selected {
+            model.selected_count += 1;
+        } else {
+            model.selected_count -= 1;
+        };
     }
     select_next(model)
 }
@@ -228,7 +229,7 @@ fn show_view(model: &mut Model, view: View) -> Option<Message> {
 
 fn unselect_selected_items(model: &mut Model) {
     model.lines.items.iter_mut().for_each(|i| {
-        i.status = Selected::No;
+        i.status = false;
     });
     model.selected_count = 0;
 }
@@ -267,14 +268,14 @@ mod tests {
 
         // THEN
         assert!(message.is_none());
-        let expected: Vec<&str> = model
+        let content: Vec<&str> = model
             .lines
             .items
             .iter()
             .map(|i| i.content.as_str())
             .collect();
 
-        assert!(expected == vec!["2", "0", "1", "3", "4"]);
+        assert_eq!(content, vec!["2", "0", "1", "3", "4"]);
     }
 
     #[test]
@@ -290,14 +291,14 @@ mod tests {
 
         // THEN
         assert!(message.is_none());
-        let expected: Vec<&str> = model
+        let content: Vec<&str> = model
             .lines
             .items
             .iter()
             .map(|i| i.content.as_str())
             .collect();
 
-        assert!(expected == vec!["0", "4", "1", "2", "3"]);
+        assert_eq!(content, vec!["0", "4", "1", "2", "3"]);
     }
 
     #[test]
@@ -314,14 +315,14 @@ mod tests {
         // THEN
         assert!(message.is_none());
         assert!(model.message.is_some());
-        let expected: Vec<&str> = model
+        let content: Vec<&str> = model
             .lines
             .items
             .iter()
             .map(|i| i.content.as_str())
             .collect();
 
-        assert!(expected == vec!["0", "1", "2", "3", "4"]);
+        assert_eq!(content, vec!["0", "1", "2", "3", "4"]);
     }
 
     #[test]
@@ -331,25 +332,28 @@ mod tests {
         let mut model = Model::default("file.txt".to_string(), &lines, false);
         model.lines.items[1..3]
             .iter_mut()
-            .for_each(|i| i.status = Selected::Yes);
-        model.lines.items[5].status = Selected::Yes;
+            .for_each(|i| i.status = true);
+        model.lines.items[5].status = true;
         model.lines.items[7..9]
             .iter_mut()
-            .for_each(|i| i.status = Selected::Yes);
+            .for_each(|i| i.status = true);
 
         // WHEN
         let message = move_selection_to_top(&mut model);
 
         // THEN
         assert!(message.is_none());
-        let expected: Vec<&str> = model
+        let content: Vec<&str> = model
             .lines
             .items
             .iter()
             .map(|i| i.content.as_str())
             .collect();
 
-        assert!(expected == vec!["1", "2", "5", "7", "8", "0", "3", "4", "6", "9"]);
+        assert_eq!(
+            content,
+            vec!["1", "2", "5", "7", "8", "0", "3", "4", "6", "9"]
+        );
     }
 
     #[test]
@@ -364,14 +368,14 @@ mod tests {
 
         // THEN
         assert!(message.is_none());
-        let expected: Vec<&str> = model
+        let content: Vec<&str> = model
             .lines
             .items
             .iter()
             .map(|i| i.content.as_str())
             .collect();
 
-        assert!(expected == vec!["0", "1", "3", "2", "4"]);
+        assert_eq!(content, vec!["0", "1", "3", "2", "4"]);
     }
 
     #[test]
@@ -386,13 +390,65 @@ mod tests {
 
         // THEN
         assert!(message.is_none());
-        let expected: Vec<&str> = model
+        let content: Vec<&str> = model
             .lines
             .items
             .iter()
             .map(|i| i.content.as_str())
             .collect();
 
-        assert!(expected == vec!["0", "2", "1", "3", "4"]);
+        assert_eq!(content, vec!["0", "2", "1", "3", "4"]);
+    }
+
+    #[test]
+    fn toggle_current_works() {
+        // GIVEN
+        let lines: Vec<String> = (0..5).map(|n| n.to_string()).collect();
+        let mut model = Model::default("file.txt".to_string(), &lines, false);
+        model.lines.state.select(Some(1));
+
+        // WHEN
+        let message_one = toggle_current(&mut model);
+        let message_two = toggle_current(&mut model);
+        let message_three = toggle_current(&mut model);
+
+        // THEN
+        assert!(message_one.is_none());
+        assert!(message_two.is_none());
+        assert!(message_three.is_none());
+        let content: Vec<&str> = model
+            .lines
+            .items
+            .iter()
+            .map(|i| i.content.as_str())
+            .collect();
+        let statuses: Vec<bool> = model.lines.items.iter().map(|i| i.status).collect();
+
+        assert_eq!(content, vec!["0", "1", "2", "3", "4"]);
+        assert_eq!(statuses, vec![false, true, true, true, false]);
+        assert_eq!(model.selected_count, 3);
+        assert_eq!(model.lines.state.selected(), Some(4));
+    }
+
+    #[test]
+    fn selection_can_be_reset() {
+        // GIVEN
+        let lines: Vec<String> = (0..5).map(|n| n.to_string()).collect();
+        let mut model = Model::default("file.txt".to_string(), &lines, false);
+        model.lines.state.select(Some(1));
+
+        // WHEN
+        let _ = toggle_current(&mut model);
+        let _ = toggle_current(&mut model);
+        let _ = toggle_current(&mut model);
+        let message = go_back_or_quit(&mut model);
+
+        // THEN
+        assert!(message.is_none());
+        let statuses: Vec<bool> = model.lines.items.iter().map(|i| i.status).collect();
+
+        assert_eq!(statuses, vec![false, false, false, false, false]);
+        assert_eq!(model.selected_count, 0);
+        assert_eq!(model.lines.state.selected(), Some(4));
     }
 }

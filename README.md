@@ -18,11 +18,20 @@ up quickly and have easy keymaps to reorder lines in a file.
 💾 Installation
 ---
 
+**homebrew**:
+
+```sh
+brew install dhth/tap/shfl
+```
+
 **cargo**:
 
 ```sh
 cargo install --git https://github.com/dhth/shfl.git
 ```
+
+Or get the binaries directly from a [release][2]. Read more about verifying the
+authenticity of released artifacts [here](#-verifying-release-artifacts).
 
 ⌨️ Keymaps
 ---
@@ -41,9 +50,53 @@ space / s            select/unselect item
 Esc / q              go back/reset selection/exit
 ```
 
+🔐 Verifying release artifacts
+---
+
+In case you get the `shfl` binary directly from a [release][2], you may want to
+verify its authenticity. Checksums are applied to all released artifacts, and
+the resulting checksum file is signed using
+[cosign](https://docs.sigstore.dev/cosign/installation/).
+
+Steps to verify (replace `A.B.C` in the cshflands listed below with the version
+you want):
+
+1. Download the following files from the release:
+
+   ```text
+   - shfl_A.B.C_checksums.txt
+   - shfl_A.B.C_checksums.txt.pem
+   - shfl_A.B.C_checksums.txt.sig
+   ```
+
+2. Verify the signature:
+
+   ```shell
+   cosign verify-blob shfl_A.B.C_checksums.txt \
+       --certificate shfl_A.B.C_checksums.txt.pem \
+       --signature shfl_A.B.C_checksums.txt.sig \
+       --certificate-identity-regexp 'https://github\.com/dhth/shfl/\.github/workflows/.+' \
+       --certificate-oidc-issuer "https://token.actions.githubusercontent.com"
+   ```
+
+3. Download the compressed archive you want, and validate its checksum:
+
+   ```shell
+   curl -sSLO https://github.com/dhth/shfl/releases/download/vA.B.C/shfl_A.B.C_linux_amd64.tar.gz
+   sha256sum --ignore-missing -c shfl_A.B.C_checksums.txt
+   ```
+
+3. If checksum validation goes through, uncompress the archive:
+
+   ```shell
+   tar -xzf shfl_A.B.C_linux_amd64.tar.gz
+   ./shfl
+   ```
+
 Acknowledgements
 ---
 
 `shfl` is built using [ratatui][1].
 
 [1]: https://github.com/ratatui/ratatui
+[2]: https://github.com/dhth/shfl/releases

@@ -8,7 +8,7 @@ on:
       - ".github/workflows/release.yml"
   pull_request:
     paths:
-      - "goreleaser.yml"
+      - ".goreleaser.yaml"
       - ".github/workflows/release.yml"
 
 jobs:

@@ -15,6 +15,8 @@ file, and I map a key to a session on a specific line number. To easily change
 which session is assigned to which line number, I needed a tool that would start
 up quickly and have easy keymaps to reorder lines in a file.
 
+https://github.com/user-attachments/assets/58585b04-6474-4172-b6f8-40c75b486113
+
 💾 Installation
 ---
 

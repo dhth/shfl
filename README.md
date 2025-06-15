@@ -1,5 +1,11 @@
-✨ Overview
----
+<p align="center">
+  <h1 align="center">shfl</h1>
+  <p align="center">
+    <a href="https://github.com/dhth/shfl/actions/workflows/main.yml"><img alt="Build status" src="https://img.shields.io/github/actions/workflow/status/dhth/shfl/main.yml?style=flat-square"></a>
+    <a href="https://github.com/dhth/shfl/releases/latest"><img alt="Latest Release" src="https://img.shields.io/github/release/dhth/shfl.svg?style=flat-square"></a>
+    <a href="https://github.com/dhth/shfl/releases"><img alt="Commits Since Latest Release" src="https://img.shields.io/github/commits-since/dhth/shfl/latest?style=flat-square"></a>
+  </p>
+</p>
 
 `shfl` (short for "shuffle") lets you easily rearrange lines in a file with
 simple keymaps.

@@ -47,8 +47,3 @@ changelog:
 
 release:
   draft: true
-  footer: >-
-
-    ---
-
-    Released by [GoReleaser](https://github.com/goreleaser/goreleaser).

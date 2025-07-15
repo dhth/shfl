@@ -57,7 +57,7 @@ fn main() -> anyhow::Result<()> {
 
     ratatui::try_restore().context(UNEXPECTED_ERROR_MESSAGE)?;
     if let Some(UserMessage::Error(msg)) = &model.message {
-        println!("error: {}", msg);
+        println!("error: {msg}");
     }
 
     Ok(())

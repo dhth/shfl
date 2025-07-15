@@ -1,11 +1,11 @@
-use crate::common::{View, PRIMARY_COLOR, TITLE, TITLE_FG_COLOR};
+use crate::common::{PRIMARY_COLOR, TITLE, TITLE_FG_COLOR, View};
 use crate::model::Model;
 use ratatui::{
+    Frame,
     layout::Alignment,
     style::{Style, Stylize},
     text::Line,
     widgets::{Block, List, ListDirection, ListItem, Padding, Paragraph},
-    Frame,
 };
 
 const HELP_CONTENTS: &str = include_str!("static/help.txt");

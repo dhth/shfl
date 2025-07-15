@@ -1,4 +1,4 @@
-use crate::common::{View, SELECTED_COLOR};
+use crate::common::{SELECTED_COLOR, View};
 use ratatui::{
     style::Style,
     text::Line,

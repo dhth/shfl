@@ -211,8 +211,7 @@ fn save_selection(model: &mut Model) -> Option<Message> {
         Ok(_) => model.message = Some(UserMessage::Success("written to file".to_string())),
         Err(e) => {
             model.message = Some(UserMessage::Error(format!(
-                "couldn't write to file; error: {}",
-                e
+                "couldn't write to file; error: {e}"
             )))
         }
     }

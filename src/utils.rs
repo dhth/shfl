@@ -1,6 +1,6 @@
 use std::fs::File;
-use std::io::prelude::*;
 use std::io::BufReader;
+use std::io::prelude::*;
 
 pub(crate) fn read_from_file(file: &File) -> Result<Vec<String>, std::io::Error> {
     let reader = BufReader::new(file);

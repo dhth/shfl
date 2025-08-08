@@ -6,12 +6,11 @@ use ratatui::crossterm::event::{self, Event, KeyCode};
 use std::time::Duration;
 
 pub(crate) fn handle_event(model: &Model) -> anyhow::Result<Option<Message>> {
-    if event::poll(Duration::from_millis(16))? {
-        if let Event::Key(key) = event::read()? {
-            if key.kind == event::KeyEventKind::Press {
-                return Ok(handle_key(model, key));
-            }
-        }
+    if event::poll(Duration::from_millis(16))?
+        && let Event::Key(key) = event::read()?
+        && key.kind == event::KeyEventKind::Press
+    {
+        return Ok(handle_key(model, key));
     }
     Ok(None)
 }

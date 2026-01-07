@@ -11,7 +11,7 @@ exclude = [
 [dependencies]
 anyhow = "1.0.100"
 clap = { version = "4.5.53", features = ["derive"] }
-ratatui = "0.29.0"
+ratatui = "0.30.0"
 
 [profile.release]
 codegen-units = 1

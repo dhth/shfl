@@ -3,7 +3,7 @@ use crate::model::Model;
 use ratatui::{
     Frame,
     layout::Alignment,
-    style::{Style, Stylize},
+    style::Style,
     text::Line,
     widgets::{Block, List, ListDirection, ListItem, Padding, Paragraph},
 };

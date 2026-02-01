@@ -10,7 +10,7 @@ exclude = [
 
 [dependencies]
 anyhow = "1.0.100"
-clap = { version = "4.5.53", features = ["derive"] }
+clap = { version = "4.5.56", features = ["derive"] }
 ratatui = "0.30.0"
 
 [profile.release]

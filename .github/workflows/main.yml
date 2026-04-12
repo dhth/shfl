@@ -117,7 +117,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Goreleaser check
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           version: 'v2.9.0'
           args: check
